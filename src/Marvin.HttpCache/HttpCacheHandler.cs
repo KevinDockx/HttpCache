@@ -69,7 +69,7 @@ namespace Marvin.HttpCache
               
                // we must assume "the worst": get from server.
 
-               bool mustRevalidate = MustRevalidate(responseFromCache); 
+               bool mustRevalidate = HttpResponseHelpers.MustRevalidate(responseFromCache); 
 
                if (mustRevalidate)
                {                  
@@ -108,54 +108,6 @@ namespace Marvin.HttpCache
 
        }
 
-       private bool MustRevalidate(HttpResponseMessage responseFromCache)
-       {
-           // should we revalidate?
-           if (responseFromCache.Content == null)
-           {
-               // something went wrong - revalidate
-               return true;
-           }               
-
-           // has the expired date passed? 
-           if ((responseFromCache.Content.Headers.Expires != null &&
-               responseFromCache.Content.Headers.Expires < DateTimeOffset.UtcNow)
-               || 
-               // OR is maxage passed?
-               (responseFromCache.Headers.CacheControl != null
-               && responseFromCache.Headers.CacheControl.MaxAge != null 
-               && (responseFromCache.Headers.Date.Value.Add(responseFromCache.Headers.CacheControl.MaxAge.Value)
-               <= DateTime.UtcNow))
-               ||
-               // OR is sharedmaxage passed?
-               (responseFromCache.Headers.CacheControl != null
-               && responseFromCache.Headers.CacheControl.SharedMaxAge != null 
-               && (responseFromCache.Headers.Date.Value.Add(responseFromCache.Headers.CacheControl.SharedMaxAge.Value)
-               <= DateTime.UtcNow))
-               )
-
-           {
-               // This means the response is stale.  A client can keep
-               // on working with stale responses, unless must-revalidate is defined
-
-               var cacheControlHeader = responseFromCache.Headers.CacheControl;
-               if (cacheControlHeader == null)
-               {
-                   return false;
-               }
-               else
-               {
-                   return cacheControlHeader.MustRevalidate;
-               }
-
-               // TO BE IMPLEMENTED: AlwaysRevalidateStaleResponses option: this
-               // should ensure revalidation is always done, regardless of 
-               // must-revalidate
-           }
-
-           return false;
-
-       }
 
        private Task<HttpResponseMessage> HandleSendAndContinuation(string cacheKey, HttpRequestMessage request, 
            System.Threading.CancellationToken cancellationToken)
@@ -165,29 +117,57 @@ namespace Marvin.HttpCache
                    .ContinueWith(
                     task =>
                     {
-                        bool isCacheable = false;
 
                         var serverResponse = task.Result;
 
-                        // ensure no NULL dates
-                        if (serverResponse.Headers.Date == null)
+                        if (serverResponse.IsSuccessStatusCode)
                         {
-                            serverResponse.Headers.Date = DateTimeOffset.UtcNow;
+
+                            // ensure no NULL dates
+                            if (serverResponse.Headers.Date == null)
+                            {
+                                serverResponse.Headers.Date = DateTimeOffset.UtcNow;
+                            }
+                            
+                            // check the response: is this response allowed to be cached?
+                            bool isCacheable = HttpResponseHelpers.CanBeCached(serverResponse);
+
+                            if (isCacheable)
+                            {
+    
+                                // max-age overrides expires header, and 
+                                // shared max age overrides both.  Only keep 
+                                // one of these value.
+                                //
+                                // note: changed.  Keep all values - no tinkering with the
+                                // response, values are checked for revalidate.  
+                                //
+                                //if (serverResponse.Headers.CacheControl != null 
+                                //    && 
+                                //        (serverResponse.Headers.CacheControl.MaxAge != null || 
+                                //         serverResponse.Headers.CacheControl.SharedMaxAge != null)
+                                //    &&
+                                //    serverResponse.Content.Headers.Expires != null)
+                                //{
+                                //    serverResponse.Content.Headers.Expires = null;
+                                //}
+
+
+                                // add the response to cache
+                                _cacheStore.SetAsync(cacheKey, serverResponse);
+                            }
+                            
+
+                            // what about vary by headers (=> key should take this into account)?
+
+
                         }
-                    
-                        // check the response: is this response allowed to be cached?
 
-                        // what about vary by headers?
-
-
-                        // add the response to cache
-                        _cacheStore.SetAsync(cacheKey, serverResponse);
                         return serverResponse;
 
                     });
        }
 
- 
 
 
    }
