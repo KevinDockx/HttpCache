@@ -11,7 +11,10 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace Marvin.HttpCache.Tests
-{
+{ 
+
+
+
     [TestClass]
     public class HttpClientTests
     {
@@ -24,6 +27,7 @@ namespace Marvin.HttpCache.Tests
 
         private HttpClient InitClient()
         {
+     
             _store = new ImmutableInMemoryCacheStore<string, HttpResponseMessage>();
             _mockHandler = new MockHttpMessageHandler();
             var httpClient = new HttpClient(
@@ -34,6 +38,11 @@ namespace Marvin.HttpCache.Tests
 
             return httpClient;
         }
+
+
+
+
+
 
 
         private HttpResponseMessage GetResponseMessage(bool mustRevalidate)
