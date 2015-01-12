@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
@@ -90,7 +91,7 @@ namespace Marvin.HttpCache
                             responseFromCache.Content.Headers.LastModified.Value.ToString("r"));
 				    }
  
-                    return HandleSendAndContinuation(cacheKey, request, cancellationToken);
+                    return HandleSendAndContinuation(cacheKey, request, cancellationToken, true);
                }
                else
                {
@@ -102,7 +103,7 @@ namespace Marvin.HttpCache
            else
            {
                // response isn't cached.  Get it, and (possibly) add it to cache.
-               return HandleSendAndContinuation(cacheKey, request, cancellationToken); 
+               return HandleSendAndContinuation(cacheKey, request, cancellationToken, false); 
            }
 
 
@@ -110,7 +111,7 @@ namespace Marvin.HttpCache
 
 
        private Task<HttpResponseMessage> HandleSendAndContinuation(string cacheKey, HttpRequestMessage request, 
-           System.Threading.CancellationToken cancellationToken)
+           System.Threading.CancellationToken cancellationToken, bool mustRevalidate)
        {
            
            return base.SendAsync(request, cancellationToken)
@@ -120,9 +121,22 @@ namespace Marvin.HttpCache
 
                         var serverResponse = task.Result;
 
+                        // if we had to revalidate & got a 304 returned, that means
+                        // we can get the response message from cache.
+                        if (mustRevalidate && serverResponse.StatusCode == HttpStatusCode.NotModified)
+                        {
+                            // get from cache
+                            var resp = _cacheStore.GetAsync(cacheKey).Result;
+                            // set request
+                            resp.RequestMessage = request;
+                            // return response
+                            return resp;
+                        }
+
+
                         if (serverResponse.IsSuccessStatusCode)
                         {
-
+                            
                             // ensure no NULL dates
                             if (serverResponse.Headers.Date == null)
                             {
@@ -137,7 +151,7 @@ namespace Marvin.HttpCache
     
                                 // max-age overrides expires header, and 
                                 // shared max age overrides both.  Only keep 
-                                // one of these value.
+                                // one of these values.
                                 //
                                 // note: changed.  Keep all values - no tinkering with the
                                 // response, values are checked for revalidate.  

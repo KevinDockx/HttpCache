@@ -48,9 +48,9 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="HttpCacheTests.cs" />
     <Compile Include="HttpClientTests.cs" />
     <Compile Include="ImmutableInMemoryCacheStoreTests.cs" />
+    <Compile Include="Mock\MockHttpMessageHandler.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
