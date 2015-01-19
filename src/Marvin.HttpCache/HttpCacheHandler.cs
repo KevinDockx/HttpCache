@@ -18,43 +18,64 @@ namespace Marvin.HttpCache
 
        private bool _enableConditionalPatch = true;
 
-       private bool _enableRelatedResourceClearAfterPut = true;
+       private bool _enableClearRelatedResourceRepresentationsAfterPut = true;
 
-       private bool _enableRelatedResourceClearAfterPatch = true;
-        
-       
+       private bool _enableClearRelatedResourceRepresentationsAfterPatch = true;
+
+       private bool _forceRevalidationOfStaleResourceRepresentations = false;
 
        /// <summary>
        /// Instantiates the HttpCacheHandler
        /// </summary>
-       /// <param name="enableConditionalPut">When conditional put is enabled, 
-       /// IfMatch and IfUnmodifiedSince headers are added tot the request so the update is only
-       /// executed if the cached version on the client matches the version on the server.  This is
-       /// the default.
-       ///
-       /// If conditional put isn't enabled, we send the put request through no matter what - 
-       /// this means that PUT is executed even if the version on the client doesn't match
-       /// that on the server.  </param>
-       public HttpCacheHandler(bool enableConditionalPut = true)
-           : this(new ImmutableInMemoryCacheStore(), enableConditionalPut)
+       public HttpCacheHandler()
+           : this(new ImmutableInMemoryCacheStore(), new HttpCacheHandlerSettings())
 		{
 		}
 
        /// <summary>
        /// Instantiates the HttpCacheHandler
        /// </summary>
-       /// <param name="cacheStore">An instance of an ICacheStore</param>
-       /// <param name="enableConditionalPut">When conditional put is enabled, 
-       /// IfMatch and IfUnmodifiedSince headers are added tot the request so the update is only
-       /// executed if the cached version on the client matches the version on the server.  This is
-       /// the default.
-       ///
-       /// If conditional put isn't enabled, we send the put request through no matter what - 
-       /// this means that PUT is executed even if the version on the client doesn't match
-       /// that on the server.  </param>
-       public HttpCacheHandler(ICacheStore cacheStore, bool enableConditionalPut = true)
+       /// <param name="cacheStore">An instance of an implementation of ICacheStore</param>
+       public HttpCacheHandler(ICacheStore cacheStore)
+           : this(cacheStore, new HttpCacheHandlerSettings())
        {
+       }
+
+       /// <summary>
+       /// Instantiates the HttpCacheHandler
+       /// </summary>
+       /// <param name="cacheHandlerSettings">An instance of an implementation of IHttpCacheHandlerSettings</param>
+       public HttpCacheHandler(IHttpCacheHandlerSettings cacheHandlerSettings)
+           : this(new ImmutableInMemoryCacheStore(), cacheHandlerSettings)
+       {
+       }
+       
+
+       /// <summary>
+       /// Instantiates the HttpCacheHandler
+       /// </summary>
+       /// <param name="cacheStore">An instance of an implementation of ICacheStore</param>
+       /// <param name="cacheHandlerSettings">An instance of an implementation of IHttpCacheHandlerSettings</param>
+       public HttpCacheHandler(ICacheStore cacheStore, IHttpCacheHandlerSettings cacheHandlerSettings)
+       {
+           if (cacheStore == null)
+           {
+               throw new ArgumentNullException("cacheStore", "Provided ICacheStore implementation cannot be null.");
+           }
+
+           if (cacheHandlerSettings == null)
+           {
+               throw new ArgumentNullException("cacheHandlerSettings", "Provided IHttpCacheHandlerSettings implementation cannot be null.");
+           }
+
            _cacheStore = cacheStore;
+
+           _forceRevalidationOfStaleResourceRepresentations = cacheHandlerSettings.ForceRevalidationOfStaleResourceRepresentations;
+           _enableConditionalPatch = cacheHandlerSettings.EnableConditionalPatch;
+           _enableConditionalPut = cacheHandlerSettings.EnableConditionalPut;
+           _enableClearRelatedResourceRepresentationsAfterPatch = cacheHandlerSettings.EnableClearRelatedResourceRepresentationsAfterPatch;
+           _enableClearRelatedResourceRepresentationsAfterPut = cacheHandlerSettings.EnableClearRelatedResourceRepresentationsAfterPut;
+
        }
 
       
@@ -279,9 +300,9 @@ namespace Marvin.HttpCache
 
                             // should we clear?
 
-                            if ((_enableRelatedResourceClearAfterPut && request.Method == HttpMethod.Put)
+                            if ((_enableClearRelatedResourceRepresentationsAfterPut && request.Method == HttpMethod.Put)
                                 ||
-                                (_enableRelatedResourceClearAfterPatch && request.Method.Method.ToLower() == "patch"))
+                                (_enableClearRelatedResourceRepresentationsAfterPatch && request.Method.Method.ToLower() == "patch"))
                             {
                                 // clear related resources 
                                 // 

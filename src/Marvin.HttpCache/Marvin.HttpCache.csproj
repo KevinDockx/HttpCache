@@ -41,7 +41,9 @@
   <ItemGroup>
     <Compile Include="Constants.cs" />
     <Compile Include="HttpCacheHandler.cs" />
+    <Compile Include="HttpCacheHandlerSettings.cs" />
     <Compile Include="HttpResponseHelpers.cs" />
+    <Compile Include="IHttpCacheHandlerSettings.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Store\ICacheStore.cs" />
     <Compile Include="Store\ImmutableInMemoryCacheStore.cs" />
