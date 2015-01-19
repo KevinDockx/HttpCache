@@ -132,6 +132,18 @@ namespace Marvin.HttpCache
            bool responseIsCached = false;
            HttpResponseMessage responseFromCache = null;
 
+           // first, before even looking at the cache:
+           // The Cache-Control: no-cache HTTP/1.1 header field is also intended for use in requests made by the client. 
+           // It is a means for the browser to tell the server and any intermediate caches that it wants a 
+           // fresh version of the resource. 
+
+           if (request.Headers.CacheControl != null && request.Headers.CacheControl.NoCache)
+           {
+               // Don't get from cache.  Get from server.
+               return HandleSendAndContinuation(cacheKey, request, cancellationToken, false); 
+           }
+
+
            // available in cache?
            var responseFromCacheAsTask = _cacheStore.GetAsync(cacheKey);
            if (responseFromCacheAsTask.Result != null)
@@ -228,25 +240,6 @@ namespace Marvin.HttpCache
 
                             if (isCacheable)
                             {
-    
-                                // max-age overrides expires header, and 
-                                // shared max age overrides both.  Only keep 
-                                // one of these values.
-                                //
-                                // note: changed.  Keep all values - no tinkering with the
-                                // response, values are checked for revalidate.  
-                                //
-                                //if (serverResponse.Headers.CacheControl != null 
-                                //    && 
-                                //        (serverResponse.Headers.CacheControl.MaxAge != null || 
-                                //         serverResponse.Headers.CacheControl.SharedMaxAge != null)
-                                //    &&
-                                //    serverResponse.Content.Headers.Expires != null)
-                                //{
-                                //    serverResponse.Content.Headers.Expires = null;
-                                //}
-
-
                                 // add the response to cache
                                 _cacheStore.SetAsync(cacheKey, serverResponse);
                             }
