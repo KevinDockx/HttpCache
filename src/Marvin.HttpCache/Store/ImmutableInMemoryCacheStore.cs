@@ -2,40 +2,45 @@
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
+using System.Net.Http;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
 namespace Marvin.HttpCache.Store
 {
-    public class ImmutableInMemoryCacheStore<TKey, TValue> : ICacheStore<TKey, TValue>
+    public class ImmutableInMemoryCacheStore : ICacheStore
     {
 
-        private IImmutableDictionary<TKey, TValue> _cache = ImmutableDictionary.Create<TKey, TValue>();
+        private IImmutableDictionary<string, HttpResponseMessage> _cache = ImmutableDictionary.Create<string, HttpResponseMessage>();
 
         // get an item from cache with key "key"
-        public Task<TValue> GetAsync(TKey key)
+        public Task<HttpResponseMessage> GetAsync(string key)
         {
-            TValue value;
+            key = key.ToLower();
+
+            HttpResponseMessage value;
             if (_cache.TryGetValue(key, out value))
             {
-                return Task.FromResult((TValue)value);
+                return Task.FromResult((HttpResponseMessage)value);
             }
             else
             {
-                return Task.FromResult(default(TValue));
+                return Task.FromResult(default(HttpResponseMessage));
             }
    
         }
 
         // put an item with key "key" in cache or overwrite it
-        public Task SetAsync(TKey key, TValue value)
+        public Task SetAsync(string key, HttpResponseMessage value)
         {
            
             do
             {
+                key = key.ToLower();
+
                 var oldCache = _cache;
-                IImmutableDictionary<TKey, TValue> newCache;
+                IImmutableDictionary<string, HttpResponseMessage> newCache;
                 
                 if (oldCache.ContainsKey(key))
                 {
@@ -81,7 +86,82 @@ namespace Marvin.HttpCache.Store
             } while (true);
 
         }
-        
+
+
+        public Task RemoveAsync(string key)
+        {
+
+            do
+            {
+                key = key.ToLower();
+
+                var oldCache = _cache;
+                IImmutableDictionary<string, HttpResponseMessage> newCache;
+
+                if (oldCache.ContainsKey(key))
+                {
+                    // Remove.  Dic is immutable: no lock needed.
+                    newCache = oldCache.Remove(key);
+                }
+                else
+                {                 
+                    newCache = oldCache;
+                } 
+
+                // compares oldCache with newCache - if these are now the s
+                if (oldCache == Interlocked.CompareExchange(ref _cache, newCache, oldCache))
+                {
+                    // we can get out of the loop
+
+                    return Task.FromResult(true);
+                }
+
+                // CompareExchange failed => another thread has made a change to _cache.
+                // We need to do the add again, as we'll want to make sure we always work 
+                // on the latest version - we don't want to loose changes to the cache.
+
+            } while (true);
+
+        }
+
+
+        public Task RemoveRangeAsync(string keyStartsWith)
+        {
+
+            do
+            {
+                keyStartsWith = keyStartsWith.ToLower();
+
+                var oldCache = _cache;
+                IImmutableDictionary<string, HttpResponseMessage> newCache;
+
+                var listOfKeys = oldCache.Keys.Where(k => k.StartsWith(keyStartsWith));
+                
+                if (listOfKeys.Any())
+                {
+                    // Remove range.  Dic is immutable: no lock needed.
+                    newCache = oldCache.RemoveRange(listOfKeys);
+                }
+                else
+                {
+                    newCache = oldCache;
+                }
+
+                // compares oldCache with newCache - if these are now the s
+                if (oldCache == Interlocked.CompareExchange(ref _cache, newCache, oldCache))
+                {
+                    // we can get out of the loop
+                    return Task.FromResult(true);
+                }
+
+                // CompareExchange failed => another thread has made a change to _cache.
+                // We need to do the add again, as we'll want to make sure we always work 
+                // on the latest version - we don't want to loose changes to the cache.
+
+            } while (true);
+
+        }
+
         public Task ClearAsync()
         {
             _cache = _cache.Clear();

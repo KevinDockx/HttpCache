@@ -12,10 +12,17 @@ namespace Marvin.HttpCache
    public class HttpCacheHandler: DelegatingHandler
    {
 
-       private readonly ICacheStore<string, HttpResponseMessage> _cacheStore;
+       private readonly ICacheStore _cacheStore;
 
        private bool _enableConditionalPut = true;
 
+       private bool _enableConditionalPatch = true;
+
+       private bool _enableRelatedResourceClearAfterPut = true;
+
+       private bool _enableRelatedResourceClearAfterPatch = true;
+        
+       
 
        /// <summary>
        /// Instantiates the HttpCacheHandler
@@ -29,7 +36,7 @@ namespace Marvin.HttpCache
        /// this means that PUT is executed even if the version on the client doesn't match
        /// that on the server.  </param>
        public HttpCacheHandler(bool enableConditionalPut = true)
-           : this(new ImmutableInMemoryCacheStore<string, HttpResponseMessage>(), enableConditionalPut)
+           : this(new ImmutableInMemoryCacheStore(), enableConditionalPut)
 		{
 		}
 
@@ -45,7 +52,7 @@ namespace Marvin.HttpCache
        /// If conditional put isn't enabled, we send the put request through no matter what - 
        /// this means that PUT is executed even if the version on the client doesn't match
        /// that on the server.  </param>
-       public HttpCacheHandler(ICacheStore<string, HttpResponseMessage> cacheStore, bool enableConditionalPut = true)
+       public HttpCacheHandler(ICacheStore cacheStore, bool enableConditionalPut = true)
        {
            _cacheStore = cacheStore;
        }
@@ -55,49 +62,51 @@ namespace Marvin.HttpCache
            System.Threading.CancellationToken cancellationToken)
        {
 
-           if (request.Method == HttpMethod.Put)
+           if (request.Method == HttpMethod.Put || request.Method.Method.ToLower() == "patch")
            {
-               // PUT
-               return HandleHttpPut(request, cancellationToken);
-         
+               // PUT - PATCH
+               return HandleHttpPutOrPatch(request, cancellationToken);  
            }
            else if (request.Method == HttpMethod.Get)
            {
                // GET
                return HandleHttpGet(request, cancellationToken);
-           }
+           }       
            else
            {
+               // DELETE - POST - OTHERS 
                return base.SendAsync(request, cancellationToken);
-               
            }
 
        }
 
-       private Task<HttpResponseMessage> HandleHttpPut(HttpRequestMessage request, 
+       private Task<HttpResponseMessage> HandleHttpPutOrPatch(HttpRequestMessage request,
            System.Threading.CancellationToken cancellationToken)
-       { 
+       {
 
-           // cached + conditional PUT
-           if (_enableConditionalPut)
+           string cacheKey = request.RequestUri.ToString();
+           
+           // cached + conditional PUT or cached + conditional PATCH
+           if ((_enableConditionalPut && request.Method == HttpMethod.Put)
+               ||
+               (_enableConditionalPatch && request.Method.Method.ToLower() == "patch"))
            {
-               // check cache
-               string cacheKey = request.RequestUri.ToString();
-               bool responseIsCached = false;
+
+               bool addCachingHeaders = false;
                HttpResponseMessage responseFromCache = null;
 
                // available in cache?
                var responseFromCacheAsTask = _cacheStore.GetAsync(cacheKey);
                if (responseFromCacheAsTask.Result != null)
                {
-                   responseIsCached = true;
+                   addCachingHeaders = true;
                    responseFromCache = responseFromCacheAsTask.Result;
                }
 
-               if (responseIsCached)
+               if (addCachingHeaders)
                {
-                    // set etag / lastmodified.  Both are set for better compatibility
-                    // with different backend caching systems.  
+                   // set etag / lastmodified.  Both are set for better compatibility
+                   // with different backend caching systems.  
                    if (responseFromCache.Headers.ETag != null)
                    {
                        request.Headers.Add(HttpHeaderConstants.IfMatch,
@@ -109,10 +118,10 @@ namespace Marvin.HttpCache
                        request.Headers.Add(HttpHeaderConstants.IfUnmodifiedSince,
                            responseFromCache.Content.Headers.LastModified.Value.ToString("r"));
                    }
-               }                
+               }
            }
-         
-           return base.SendAsync(request, cancellationToken);
+           
+           return HandleSendAndContinuationForPutPatch(cacheKey, request, cancellationToken);
        }
 
 
@@ -207,7 +216,7 @@ namespace Marvin.HttpCache
 
                         if (serverResponse.IsSuccessStatusCode)
                         {
-                            
+                           
                             // ensure no NULL dates
                             if (serverResponse.Headers.Date == null)
                             {
@@ -254,6 +263,63 @@ namespace Marvin.HttpCache
        }
 
 
+
+       private Task<HttpResponseMessage> HandleSendAndContinuationForPutPatch(string cacheKey, HttpRequestMessage request,
+           System.Threading.CancellationToken cancellationToken)
+       {
+
+           return base.SendAsync(request, cancellationToken)
+                   .ContinueWith(
+                    task =>
+                    {
+
+                        var serverResponse = task.Result;
+
+                        if (serverResponse.IsSuccessStatusCode)
+                        {
+
+                            // ensure no NULL dates
+                            if (serverResponse.Headers.Date == null)
+                            {
+                                serverResponse.Headers.Date = DateTimeOffset.UtcNow;
+                            }
+
+                            // should we clear?
+
+                            if ((_enableRelatedResourceClearAfterPut && request.Method == HttpMethod.Put)
+                                ||
+                                (_enableRelatedResourceClearAfterPatch && request.Method.Method.ToLower() == "patch"))
+                            {
+                                // clear related resources 
+                                // 
+                                // - remove resource with cachekey.  This must be done, as there's no 
+                                // guarantee the new response is cacheable.
+                                //
+                                // - look for resources in cache that start with 
+                                // the cachekey + "?" for querystring.
+
+                                _cacheStore.RemoveAsync(cacheKey);
+                                _cacheStore.RemoveRangeAsync(cacheKey + "?");
+                            } 
+
+                            
+                            // check the response: is this response allowed to be cached?
+                            bool isCacheable = HttpResponseHelpers.CanBeCached(serverResponse);
+
+                            if (isCacheable)
+                            {
+                                // add the response to cache
+                                _cacheStore.SetAsync(cacheKey, serverResponse);
+                            }
+                            
+                            // what about vary by headers (=> key should take this into account)?
+
+                        }
+
+                        return serverResponse;
+
+                    });
+       }
 
    }
 }

@@ -15,8 +15,8 @@ namespace Marvin.HttpCache.Tests
 
         [TestMethod]
         public async Task SetAndGetNew()
-        {           
-            var store = new ImmutableInMemoryCacheStore<string, HttpResponseMessage>();
+        {
+            var store = new ImmutableInMemoryCacheStore();
 
             var resp = new HttpResponseMessage();
 
@@ -31,7 +31,7 @@ namespace Marvin.HttpCache.Tests
            [TestMethod]
         public async Task SetAndGetExisting()
         {
-            var store = new ImmutableInMemoryCacheStore<string, HttpResponseMessage>();
+            var store = new ImmutableInMemoryCacheStore();
 
             var resp = new HttpResponseMessage();
 
@@ -53,7 +53,7 @@ namespace Marvin.HttpCache.Tests
         [TestMethod]
         public async Task SetAndGetMultiple()
         {
-            var store = new ImmutableInMemoryCacheStore<string, HttpResponseMessage>();
+            var store = new ImmutableInMemoryCacheStore();
 
             var resp = new HttpResponseMessage();
             var resp2 = new HttpResponseMessage();
@@ -73,7 +73,7 @@ namespace Marvin.HttpCache.Tests
            [TestMethod]
         public async Task GetNonExisting()
         {
-            var store = new ImmutableInMemoryCacheStore<string, HttpResponseMessage>();
+            var store = new ImmutableInMemoryCacheStore();
 
             var resp = new HttpResponseMessage();
           
@@ -90,7 +90,7 @@ namespace Marvin.HttpCache.Tests
            [TestMethod]
         public async Task GetNonExistingFromEmpty()
         {
-            var store = new ImmutableInMemoryCacheStore<string, HttpResponseMessage>();
+            var store = new ImmutableInMemoryCacheStore();
                     
             var fromCache = await store.GetAsync("key");
 
@@ -102,7 +102,7 @@ namespace Marvin.HttpCache.Tests
            [TestMethod]
         public async Task SetAndClear()
         {
-            var store = new ImmutableInMemoryCacheStore<string, HttpResponseMessage>();
+            var store = new ImmutableInMemoryCacheStore();
 
             var resp = new HttpResponseMessage();
 

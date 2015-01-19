@@ -21,14 +21,14 @@ namespace Marvin.HttpCache.Tests
 
         private const string _testUri = "http://www.myapi.com/testresources";
         private const string _eTag = "\"dummyetag\"";
-        private ImmutableInMemoryCacheStore<string, HttpResponseMessage> _store;
+        private ImmutableInMemoryCacheStore _store;
         private MockHttpMessageHandler _mockHandler;
 
 
         private HttpClient InitClient()
         {
      
-            _store = new ImmutableInMemoryCacheStore<string, HttpResponseMessage>();
+            _store = new ImmutableInMemoryCacheStore();
             _mockHandler = new MockHttpMessageHandler();
             var httpClient = new HttpClient(
                 new HttpCacheHandler(_store)
