@@ -14,15 +14,38 @@ namespace Marvin.HttpCache
 
        private readonly ICacheStore<string, HttpResponseMessage> _cacheStore;
 
+       private bool _enableConditionalPut = true;
 
 
-       public HttpCacheHandler()
-           : this(new ImmutableInMemoryCacheStore<string, HttpResponseMessage>())
+       /// <summary>
+       /// Instantiates the HttpCacheHandler
+       /// </summary>
+       /// <param name="enableConditionalPut">When conditional put is enabled, 
+       /// IfMatch and IfUnmodifiedSince headers are added tot the request so the update is only
+       /// executed if the cached version on the client matches the version on the server.  This is
+       /// the default.
+       ///
+       /// If conditional put isn't enabled, we send the put request through no matter what - 
+       /// this means that PUT is executed even if the version on the client doesn't match
+       /// that on the server.  </param>
+       public HttpCacheHandler(bool enableConditionalPut = true)
+           : this(new ImmutableInMemoryCacheStore<string, HttpResponseMessage>(), enableConditionalPut)
 		{
 		}
 
-
-       public HttpCacheHandler(ICacheStore<string, HttpResponseMessage> cacheStore)
+       /// <summary>
+       /// Instantiates the HttpCacheHandler
+       /// </summary>
+       /// <param name="cacheStore">An instance of an ICacheStore</param>
+       /// <param name="enableConditionalPut">When conditional put is enabled, 
+       /// IfMatch and IfUnmodifiedSince headers are added tot the request so the update is only
+       /// executed if the cached version on the client matches the version on the server.  This is
+       /// the default.
+       ///
+       /// If conditional put isn't enabled, we send the put request through no matter what - 
+       /// this means that PUT is executed even if the version on the client doesn't match
+       /// that on the server.  </param>
+       public HttpCacheHandler(ICacheStore<string, HttpResponseMessage> cacheStore, bool enableConditionalPut = true)
        {
            _cacheStore = cacheStore;
        }
@@ -32,18 +55,66 @@ namespace Marvin.HttpCache
            System.Threading.CancellationToken cancellationToken)
        {
 
-           // only GET implemented currently
-
-           if (request.Method != HttpMethod.Get)
+           if (request.Method == HttpMethod.Put)
            {
-               return base.SendAsync(request, cancellationToken);
+               // PUT
+               return HandleHttpPut(request, cancellationToken);
+         
+           }
+           else if (request.Method == HttpMethod.Get)
+           {
+               // GET
+               return HandleHttpGet(request, cancellationToken);
            }
            else
            {
-               return HandleHttpGet(request, cancellationToken);
+               return base.SendAsync(request, cancellationToken);
+               
            }
 
        }
+
+       private Task<HttpResponseMessage> HandleHttpPut(HttpRequestMessage request, 
+           System.Threading.CancellationToken cancellationToken)
+       { 
+
+           // cached + conditional PUT
+           if (_enableConditionalPut)
+           {
+               // check cache
+               string cacheKey = request.RequestUri.ToString();
+               bool responseIsCached = false;
+               HttpResponseMessage responseFromCache = null;
+
+               // available in cache?
+               var responseFromCacheAsTask = _cacheStore.GetAsync(cacheKey);
+               if (responseFromCacheAsTask.Result != null)
+               {
+                   responseIsCached = true;
+                   responseFromCache = responseFromCacheAsTask.Result;
+               }
+
+               if (responseIsCached)
+               {
+                    // set etag / lastmodified.  Both are set for better compatibility
+                    // with different backend caching systems.  
+                   if (responseFromCache.Headers.ETag != null)
+                   {
+                       request.Headers.Add(HttpHeaderConstants.IfMatch,
+                           responseFromCache.Headers.ETag.ToString());
+                   }
+
+                   if (responseFromCache.Content.Headers.LastModified != null)
+                   {
+                       request.Headers.Add(HttpHeaderConstants.IfUnmodifiedSince,
+                           responseFromCache.Content.Headers.LastModified.Value.ToString("r"));
+                   }
+               }                
+           }
+         
+           return base.SendAsync(request, cancellationToken);
+       }
+
 
        private Task<HttpResponseMessage> HandleHttpGet(HttpRequestMessage request, 
            System.Threading.CancellationToken cancellationToken)
