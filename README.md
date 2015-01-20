@@ -16,9 +16,11 @@ Note that your API itself will also need to support this standard.  Marvin.HttpC
 
 That said, Marvin.HttpCache doesn't care about how the API is built, nor in what language.  Therefore, it works with other implementations as well, and across languages.  Eg: a third-party API developed with Node.js or in Java will work as well - as long as it supports the standard, you're good to go.
 
+It's currently under development.  You can have a look at the issues to see the progress that's being made.
+
 ## Doesn't CacheCow Have a Client-side Component as Well? ##
 
-Yes it does, and I'm a big fan of it - but currently, that component can only be used on full .NET Framework-type applications (desktop, console).  Marvin.HttpCache was built as a small, extensible portable class library component, thus it can be used across .NET Framework platforms, ie: Windows Phone, Windows Store, WPF, WinForms, Console apps.  
+Yes it does, and I'm a big fan of the server-side component - but currently, that client-side component can only be used on full .NET Framework-type applications (desktop, console).  Marvin.HttpCache was built as a small, extensible portable class library component, thus it can be used across .NET Framework platforms, ie: Windows Phone, Windows Store, WPF, WinForms, Console apps.  
 
 ## Doesn't HttpClient Cache on Its Own? ##
 
@@ -59,8 +61,8 @@ If you need to re-instantiate your HttpClient for some reason and still keep you
 public static class HttpClientFactory
 {
    
-    static ICacheStore<string, HttpResponseMessage> _store
-        = new ImmutableInMemoryCacheStore<string, HttpResponseMessage>();
+    static ICacheStore _store
+        = new ImmutableInMemoryCacheStore();
 
     
     internal HttpClient GetClient()
@@ -76,6 +78,8 @@ public static class HttpClientFactory
 
 
 The default cache store was created as a thread-safe, immutable store with this scenario in mind - it's safe to use across different HttpClient instances & across different threads.
+
+You can also input various options by passing in an HttpCacheHandlerSettings instance.  Have a look at the Wiki for more information on what the options entail.
 
 
 And that's it - you're ready to go! :)
