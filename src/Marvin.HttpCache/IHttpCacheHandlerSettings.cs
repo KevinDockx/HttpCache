@@ -6,7 +6,7 @@ namespace Marvin.HttpCache
         /// <summary>
         /// When true, IfMatch and IfUnmodifiedSince headers will be added to PUT requests if the related response
         /// was previously cached.  
-        /// </summary>
+        /// </summary> 
         bool EnableConditionalPatch { get; }
 
 

@@ -8,7 +8,7 @@
     <owners>Kevin Dockx (Marvin)</owners>
     <projectUrl>https://github.com/KevinDockx/HttpCache</projectUrl>
       <requireLicenseAcceptance>false</requireLicenseAcceptance>
-    <description>Marvin.HttpCache is a complete implementation of the RFC2616 Http Caching standard for use with HttpClient, for all .NET Framework platforms (Windows Store, Windows Phone, WPF, WinForms, Console apps)</description>
+    <description>Marvin.HttpCache is a complete implementation of the RFC2616 Http Caching standard for use with HttpClient, for all .NET Framework platforms (Windows Store, Windows Phone, WPF, WinForms, Console apps).  Make sure to check the project site for the current status and to learn how to get started.</description>
     <copyright>Copyright 2014</copyright>
     <tags>Cache HttpCache REST Web API WebAPI Windows Phone WP WPF Console Windows Store Universal</tags>
 <dependencies>
