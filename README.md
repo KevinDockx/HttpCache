@@ -1,5 +1,7 @@
 # Marvin.HttpCache Introduction and Getting Started
 
+NuGet: https://www.nuget.org/packages/Marvin.HttpCache/
+
 ## What Is Http Caching, and Why Do I Need It? ##
 
 Http Caching is sometimes referred to as "the holy grail of caching".  It is fully described at [http://www.w3.org/Protocols/rfc2616/rfc2616-sec13.html](http://www.w3.org/Protocols/rfc2616/rfc2616-sec13.html)
@@ -28,7 +30,7 @@ If you've used HttpClient in a Windows Phone app, you might've noticed it seems 
 
 ## How Do I Get Started? ##
 
-First, install the NuGet package (coming when ready for release).
+First, install the NuGet package: https://www.nuget.org/packages/Marvin.HttpCache/
 
 Then, in the location you instantiate your HttpClient, instantiate it by passing in an instance of HttpCacheHandler from the Marvin.HttpCache package:
 
