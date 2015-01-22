@@ -24,10 +24,6 @@ It's currently under development.  You can have a look at the issues to see the 
 
 Yes it does, and I'm a big fan of the server-side component - but currently, that client-side component can only be used on full .NET Framework-type applications (desktop, console).  Marvin.HttpCache was built as a small, extensible portable class library component, thus it can be used across .NET Framework platforms, ie: Windows Phone, Windows Store, WPF, WinForms, Console apps.  
 
-## Doesn't HttpClient Cache on Its Own? ##
-
-If you've used HttpClient in a Windows Phone app, you might've noticed it seems to cache responses on its own, without any additional configuration.  But that implementation isn't a complete nor correct implementation of the Http Caching standard and tends to lead to having to resort to ugly workarounds to get it to work as you want it to (eg: refreshing data).  I'd *really* advise you not to use it like that. 
-
 ## How Do I Get Started? ##
 
 First, install the NuGet package: https://www.nuget.org/packages/Marvin.HttpCache/
