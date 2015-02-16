@@ -126,7 +126,7 @@ namespace Marvin.HttpCache.Store
 
 
         public Task RemoveRangeAsync(string keyStartsWith)
-        {
+        { 
 
             do
             {
