@@ -8,7 +8,7 @@ using System.Threading;
 using System.Threading.Tasks;
 
 namespace Marvin.HttpCache.Store
-{
+{ 
     public class ImmutableInMemoryCacheStore : ICacheStore
     {
 

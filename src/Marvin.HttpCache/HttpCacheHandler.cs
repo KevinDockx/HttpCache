@@ -40,7 +40,7 @@ namespace Marvin.HttpCache
            : this(cacheStore, new HttpCacheHandlerSettings())
        {
        }
-
+        
        /// <summary>
        /// Instantiates the HttpCacheHandler
        /// </summary>

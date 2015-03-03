@@ -47,6 +47,8 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Store\ICacheStore.cs" />
     <Compile Include="Store\ImmutableInMemoryCacheStore.cs" />
+    <Compile Include="Store\ImmutableInMemoryVaryByHeadersStore.cs" />
+    <Compile Include="Store\IVaryByHeadersStore.cs" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="System.Collections.Immutable">
