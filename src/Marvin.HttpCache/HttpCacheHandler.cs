@@ -149,6 +149,10 @@ namespace Marvin.HttpCache
        private Task<HttpResponseMessage> HandleHttpGet(HttpRequestMessage request, 
            System.Threading.CancellationToken cancellationToken)
        {
+           // get VaryByHeaders - order in the request shouldn't matter, so order them so the
+           // rest of the logic doesn't result in different keys.
+
+ 
            string cacheKey = request.RequestUri.ToString();
            bool responseIsCached = false;
            HttpResponseMessage responseFromCache = null;
