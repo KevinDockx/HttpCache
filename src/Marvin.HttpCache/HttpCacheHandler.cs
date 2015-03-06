@@ -105,7 +105,8 @@ namespace Marvin.HttpCache
            System.Threading.CancellationToken cancellationToken)
        {
 
-           string cacheKey = request.RequestUri.ToString();
+           string primaryCacheKey = CacheKeyHelpers.CreatePrimaryCacheKey(request);
+           var cacheKey = CacheKeyHelpers.CreateCacheKey(primaryCacheKey);
            
            // cached + conditional PUT or cached + conditional PATCH
            if ((_enableConditionalPut && request.Method == HttpMethod.Put)
@@ -121,7 +122,7 @@ namespace Marvin.HttpCache
                if (responseFromCacheAsTask.Result != null)
                {
                    addCachingHeaders = true;
-                   responseFromCache = responseFromCacheAsTask.Result;
+                   responseFromCache = responseFromCacheAsTask.Result.HttpResponse;
                }
 
                if (addCachingHeaders)
@@ -152,10 +153,11 @@ namespace Marvin.HttpCache
            // get VaryByHeaders - order in the request shouldn't matter, so order them so the
            // rest of the logic doesn't result in different keys.
 
- 
-           string cacheKey = request.RequestUri.ToString();
+
+           string primaryCacheKey = CacheKeyHelpers.CreatePrimaryCacheKey(request);// request.RequestUri.ToString();
            bool responseIsCached = false;
            HttpResponseMessage responseFromCache = null;
+           IEnumerable<CacheEntry> cacheEntriesFromCache = null;
 
            // first, before even looking at the cache:
            // The Cache-Control: no-cache HTTP/1.1 header field is also intended for use in requests made by the client. 
@@ -165,16 +167,23 @@ namespace Marvin.HttpCache
            if (request.Headers.CacheControl != null && request.Headers.CacheControl.NoCache)
            {
                // Don't get from cache.  Get from server.
-               return HandleSendAndContinuation(cacheKey, request, cancellationToken, false); 
+               return HandleSendAndContinuation(
+                   CacheKeyHelpers.CreateCacheKey(primaryCacheKey), request, cancellationToken, false); 
            }
 
 
+
+
            // available in cache?
-           var responseFromCacheAsTask = _cacheStore.GetAsync(cacheKey);
-           if (responseFromCacheAsTask.Result != null)
+           var cacheEntriesFromCacheAsTask = _cacheStore.GetAsync(primaryCacheKey);
+           if (cacheEntriesFromCacheAsTask.Result != default(IEnumerable<CacheEntry>))
            {
+               cacheEntriesFromCache = cacheEntriesFromCacheAsTask.Result;
+
+               // TODO: for all of these, check the varyby headers (secondary key).  
+               // An item is a match if secondary & primary keys both match!
+               responseFromCache = cacheEntriesFromCache.First().HttpResponse;
                responseIsCached = true;
-               responseFromCache = responseFromCacheAsTask.Result;
            }
             
            if (responseIsCached)
@@ -207,30 +216,32 @@ namespace Marvin.HttpCache
                         request.Headers.Add(HttpHeaderConstants.IfModifiedSince,
                             responseFromCache.Content.Headers.LastModified.Value.ToString("r"));
 				    }
- 
-                    return HandleSendAndContinuation(cacheKey, request, cancellationToken, true);
+
+                    return HandleSendAndContinuation(
+                        CacheKeyHelpers.CreateCacheKey(primaryCacheKey), request, cancellationToken, true);
                }
                else
                {
                    // response is allowed to be cached and there's
                    // no need to revalidate: return the cached response
-                   return responseFromCacheAsTask;
+                   return Task.FromResult(responseFromCache);  
                }
            }
            else
            {
                // response isn't cached.  Get it, and (possibly) add it to cache.
-               return HandleSendAndContinuation(cacheKey, request, cancellationToken, false); 
+               return HandleSendAndContinuation(
+                   CacheKeyHelpers.CreateCacheKey(primaryCacheKey), request, cancellationToken, false); 
            }
 
 
        }
 
 
-       private Task<HttpResponseMessage> HandleSendAndContinuation(string cacheKey, HttpRequestMessage request, 
-           System.Threading.CancellationToken cancellationToken, bool mustRevalidate)
+       private Task<HttpResponseMessage> HandleSendAndContinuation(CacheKey cacheKey, HttpRequestMessage request,
+         System.Threading.CancellationToken cancellationToken, bool mustRevalidate)
        {
-           
+
            return base.SendAsync(request, cancellationToken)
                    .ContinueWith(
                     task =>
@@ -242,47 +253,44 @@ namespace Marvin.HttpCache
                         // we can get the response message from cache.
                         if (mustRevalidate && serverResponse.StatusCode == HttpStatusCode.NotModified)
                         {
-                            // get from cache
-                            var resp = _cacheStore.GetAsync(cacheKey).Result;
-                            // set request
-                            resp.RequestMessage = request;
-                            // return response
-                            return resp;
-                        }
+                            var cacheEntry = _cacheStore.GetAsync(cacheKey).Result;
+                            var responseFromCacheEntry = cacheEntry.HttpResponse;
+                            responseFromCacheEntry.RequestMessage = request;
 
+                            return responseFromCacheEntry;
+                        }
 
                         if (serverResponse.IsSuccessStatusCode)
                         {
-                           
+
                             // ensure no NULL dates
                             if (serverResponse.Headers.Date == null)
                             {
                                 serverResponse.Headers.Date = DateTimeOffset.UtcNow;
                             }
-                            
+
                             // check the response: is this response allowed to be cached?
                             bool isCacheable = HttpResponseHelpers.CanBeCached(serverResponse);
 
                             if (isCacheable)
                             {
                                 // add the response to cache
-                                _cacheStore.SetAsync(cacheKey, serverResponse);
+                                _cacheStore.SetAsync(cacheKey, new CacheEntry(serverResponse));
                             }
-                            
+
 
                             // what about vary by headers (=> key should take this into account)?
-
-
+                            
                         }
 
                         return serverResponse;
-
                     });
        }
 
 
+ 
 
-       private Task<HttpResponseMessage> HandleSendAndContinuationForPutPatch(string cacheKey, HttpRequestMessage request,
+       private Task<HttpResponseMessage> HandleSendAndContinuationForPutPatch(CacheKey cacheKey, HttpRequestMessage request,
            System.Threading.CancellationToken cancellationToken)
        {
 
@@ -317,7 +325,7 @@ namespace Marvin.HttpCache
                                 // the cachekey + "?" for querystring.
 
                                 _cacheStore.RemoveAsync(cacheKey);
-                                _cacheStore.RemoveRangeAsync(cacheKey + "?");
+                                _cacheStore.RemoveRangeAsync(cacheKey.PrimaryKey + "?");
                             } 
 
                             
@@ -327,7 +335,7 @@ namespace Marvin.HttpCache
                             if (isCacheable)
                             {
                                 // add the response to cache
-                                _cacheStore.SetAsync(cacheKey, serverResponse);
+                                _cacheStore.SetAsync(cacheKey, new CacheEntry(serverResponse));
                             }
                             
                             // what about vary by headers (=> key should take this into account)?

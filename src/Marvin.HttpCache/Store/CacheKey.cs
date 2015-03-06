@@ -15,59 +15,60 @@ namespace Marvin.HttpCache.Store
     /// - VaryByHeaders
     /// </summary>
     public class CacheKey
-    { 
-        public string Uri { get; private set; }
+    {
 
-        public HttpMethod Method { get; set; }
+        public string PrimaryKey { get; private set; }
+
+        public string SecondaryKey { get; private set; }
+
+        //public string Uri { get; private set; }
+
+        //public HttpMethod Method { get; private set; }
 
 
-        /// <summary>
-        /// The Vary header tells any HTTP cache which parts of the request header, 
-        /// other than the path and the Host header, to take into account when trying to find the right object.
-        ///
-        /// 
-        ///
-        /// The "Vary" header field in a response describes what parts of a
-        /// request message, aside from the method, Host header field, and
-        /// request target, might influence the origin server's process for
-        /// selecting and representing this response.  The value consists of
-        /// either a single asterisk ("*") or a list of header field names
-        /// (case-insensitive).
-        /// 
-        ///   Vary = "*" / 1#field-name
-        /// 
-        /// A Vary field value of "*" signals that anything about the request
-        /// might play a role in selecting the response representation, possibly
-        /// including elements outside the message syntax (e.g., the client's
-        /// network address).  A recipient will not be able to determine whether
-        /// this response is appropriate for a later request without forwarding
-        /// the request to the origin server.  A proxy MUST NOT generate a Vary
-        /// field with a "*" value.
-        /// 
-        /// A Vary field value consisting of a comma-separated list of names
-        /// indicates that the named request header fields, known as the
-        /// selecting header fields, might have a role in selecting the
-        /// representation.  The potential selecting header fields are not
-        /// limited to those defined by this specification.
-        /// 
-        /// For example, a response that contains
-        /// 
-        ///   Vary: accept-encoding, accept-language
-        /// 
-        /// indicates that the origin server might have used the request's
-        /// Accept-Encoding and Accept-Language fields (or lack thereof) as
-        /// determining factors while choosing the content for this response.
-        /// </summary>
-        public IEnumerable<string> VaryByHeaders { get; set; }
+        
+ 
 
-  
-    
-        public CacheKey(HttpRequestMessage request)
+        public string UnifiedKey { get; private set; }
+
+
+        public CacheKey(string primaryCacheKey)
         {
-            // create a new cachekey from the request.  Do check the VaryByHeaders => dictionary?  
+            // create a new cachekey from the response.  Do check the VaryByHeaders => dictionary?  
             // Should list all the headers defined in the vary by headers value.  
             //
             // Need fast lookup - create string key from all this?
+
+            PrimaryKey = primaryCacheKey ?? "";
+            SecondaryKey = "";
+        }
+
+    
+        public CacheKey(string primaryCacheKey, string secondaryCacheKey) : this(primaryCacheKey)
+        {
+            // create a new cachekey from the response.  Do check the VaryByHeaders => dictionary?  
+            // Should list all the headers defined in the vary by headers value.  
+            //
+            // Need fast lookup - create string key from all this?
+ 
+            SecondaryKey = secondaryCacheKey ?? "";
+
+
+        }
+
+        public override bool Equals(object obj)
+        {
+            var secondCacheKey = (CacheKey)obj;
+            return secondCacheKey.PrimaryKey == PrimaryKey
+                && secondCacheKey.SecondaryKey == SecondaryKey;
+        }
+
+        public override int GetHashCode()
+        {
+            int hash = 13;
+            hash = (hash * 7) + PrimaryKey.GetHashCode();
+            hash = (hash * 7) + SecondaryKey.GetHashCode(); 
+            return hash; 
         }
 
     }

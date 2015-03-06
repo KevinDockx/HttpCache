@@ -73,9 +73,9 @@ namespace Marvin.HttpCache.Tests
             var result = httpClient.SendAsync(req).Result;
 
             // result should be in cache
-            var fromCache = _store.GetAsync(_testUri).Result;
+            var fromCache = _store.GetAsync(new CacheKey(_testUri)).Result;
 
-            Assert.AreEqual(result, fromCache);
+            Assert.AreEqual(result, fromCache.HttpResponse);
 
             // result should be the same as response
             Assert.AreEqual(resp, result);
@@ -99,9 +99,9 @@ namespace Marvin.HttpCache.Tests
             var result2 = httpClient.SendAsync(req2).Result;
 
             // get from cache. Must match response, result and second result
-            var fromCache = _store.GetAsync(_testUri).Result;
+            var fromCache = _store.GetAsync(new CacheKey(_testUri)).Result;
 
-            Assert.AreEqual(result, fromCache);
+            Assert.AreEqual(result, fromCache.HttpResponse);
             Assert.AreEqual(result, resp);
             Assert.AreEqual(result2, result);
 
@@ -129,9 +129,9 @@ namespace Marvin.HttpCache.Tests
             var result2 = httpClient.SendAsync(req2).Result;
 
             // get from cache. Must match response, result and second result
-            var fromCache = _store.GetAsync(_testUri).Result;
+            var fromCache = _store.GetAsync(new CacheKey(_testUri)).Result;
 
-            Assert.AreEqual(result, fromCache);
+            Assert.AreEqual(result, fromCache.HttpResponse);
             Assert.AreEqual(result, resp);
             Assert.AreEqual(result2, result);
 
@@ -163,9 +163,9 @@ namespace Marvin.HttpCache.Tests
             var result2 = httpClient.SendAsync(req2).Result;
 
             // get from cache. Must match response, result and second result
-            var fromCache = _store.GetAsync(_testUri).Result;
+            var fromCache = _store.GetAsync(new CacheKey(_testUri)).Result;
 
-            Assert.AreEqual(result, fromCache);
+            Assert.AreEqual(result, fromCache.HttpResponse);
             Assert.AreEqual(result, resp);
             Assert.AreEqual(result2, result);
             
@@ -198,9 +198,9 @@ namespace Marvin.HttpCache.Tests
             var result2 = httpClient.SendAsync(req2).Result;
 
             // get from cache. Must match response, result and second result
-            var fromCache = _store.GetAsync(_testUri).Result;
+            var fromCache = _store.GetAsync(new CacheKey(_testUri)).Result;
 
-            Assert.AreEqual(result, fromCache);
+            Assert.AreEqual(result, fromCache.HttpResponse);
             Assert.AreEqual(result, resp);
             Assert.AreEqual(result2, result);
 
@@ -230,9 +230,9 @@ namespace Marvin.HttpCache.Tests
             var result2 = httpClient.SendAsync(req2).Result;
 
             // get from cache. Must match response, result and second result
-            var fromCache = _store.GetAsync(_testUri).Result;
+            var fromCache = _store.GetAsync(new CacheKey(_testUri)).Result;
 
-            Assert.AreEqual(result, fromCache);
+            Assert.AreEqual(result, fromCache.HttpResponse);
             Assert.AreEqual(result, resp);
             Assert.AreEqual(result2, result);
 
@@ -266,9 +266,9 @@ namespace Marvin.HttpCache.Tests
             var result2 = httpClient.SendAsync(req2).Result;
 
             // get from cache. Must match response, result and second result
-            var fromCache = _store.GetAsync(_testUri).Result;
+            var fromCache = _store.GetAsync(new CacheKey(_testUri)).Result;
 
-            Assert.AreEqual(result, fromCache);
+            Assert.AreEqual(result, fromCache.HttpResponse);
             Assert.AreEqual(result, resp);
             Assert.AreEqual(result2, result);
 
@@ -298,9 +298,9 @@ namespace Marvin.HttpCache.Tests
             var result2 = httpClient.SendAsync(req2).Result;
 
             // get from cache. Must match response, result and second result
-            var fromCache = _store.GetAsync(_testUri).Result;
+            var fromCache = _store.GetAsync(new CacheKey(_testUri)).Result;
 
-            Assert.AreEqual(result, fromCache);
+            Assert.AreEqual(result, fromCache.HttpResponse);
             Assert.AreEqual(result, resp);
             Assert.AreEqual(result2, result);
 
@@ -337,9 +337,9 @@ namespace Marvin.HttpCache.Tests
             var result2 = httpClient.SendAsync(req2).Result;
 
             // get from cache. Must match response, result and second result
-            var fromCache = _store.GetAsync(_testUri).Result;
+            var fromCache = _store.GetAsync(new CacheKey(_testUri)).Result;
 
-            Assert.AreEqual(result, fromCache);
+            Assert.AreEqual(result, fromCache.HttpResponse);
             Assert.AreEqual(result, resp);
             Assert.AreEqual(result2, result);
 
@@ -371,9 +371,9 @@ namespace Marvin.HttpCache.Tests
             var result2 = httpClient.SendAsync(req2).Result;
 
             // get from cache. Must match response, result and second result
-            var fromCache = _store.GetAsync(_testUri).Result;
+            var fromCache = _store.GetAsync(new CacheKey(_testUri)).Result;
 
-            Assert.AreEqual(result, fromCache);
+            Assert.AreEqual(result, fromCache.HttpResponse);
             Assert.AreEqual(result, resp);
             Assert.AreEqual(result2, result);
 

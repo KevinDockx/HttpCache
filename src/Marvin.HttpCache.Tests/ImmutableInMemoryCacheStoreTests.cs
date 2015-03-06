@@ -20,13 +20,32 @@ namespace Marvin.HttpCache.Tests
 
             var resp = new HttpResponseMessage();
 
-            await store.SetAsync("key", resp);
-            
-            var fromCache = await store.GetAsync("key");
+            var cacheKey = new CacheKey("key", null);
+            await store.SetAsync(cacheKey, new CacheEntry(resp));
+
+            var fromCache = await store.GetAsync(cacheKey);
 
             // check
-            Assert.AreEqual(resp, fromCache);
+            Assert.AreEqual(resp, fromCache.HttpResponse);
         }
+
+
+        [TestMethod]
+        public async Task SetAndGetTestCacheKeyEquality()
+        {
+            var store = new ImmutableInMemoryCacheStore();
+
+            var resp = new HttpResponseMessage();
+
+            var cacheKey = new CacheKey("key", null);
+            await store.SetAsync(cacheKey, new CacheEntry(resp));
+
+            var fromCache = await store.GetAsync(new CacheKey("key", null));
+
+            // check
+            Assert.AreEqual(resp, fromCache.HttpResponse);
+        }
+
 
            [TestMethod]
         public async Task SetAndGetExisting()
@@ -34,19 +53,20 @@ namespace Marvin.HttpCache.Tests
             var store = new ImmutableInMemoryCacheStore();
 
             var resp = new HttpResponseMessage();
-
-            await store.SetAsync("key", resp);
+            var cacheKey = new CacheKey("key", null);
+            await store.SetAsync(cacheKey, new CacheEntry(resp));
 
             var respNew = new HttpResponseMessage();
 
             // overwrite
-            await store.SetAsync("key", respNew);
+            await store.SetAsync(cacheKey, new CacheEntry(respNew));
 
-            var fromCache = await store.GetAsync("key");
+            var fromCache = await store.GetAsync(cacheKey);
 
             // check
-            Assert.AreEqual(respNew, fromCache);
+            Assert.AreEqual(respNew, fromCache.HttpResponse);
         }
+
 
 
 
@@ -58,16 +78,19 @@ namespace Marvin.HttpCache.Tests
             var resp = new HttpResponseMessage();
             var resp2 = new HttpResponseMessage();
 
-            await store.SetAsync("key", resp);
-            await store.SetAsync("key2", resp2);
+            var cacheKey = new CacheKey("key", null);
+            var cacheKey2 = new CacheKey("key2", null);
 
-            var fromCache = await store.GetAsync("key");
-            var fromCache2 = await store.GetAsync("key2");
+            await store.SetAsync(cacheKey, new CacheEntry(resp));
+            await store.SetAsync(cacheKey2, new CacheEntry(resp2));
+
+            var fromCache = await store.GetAsync(cacheKey);
+            var fromCache2 = await store.GetAsync(cacheKey2);
 
             // check
-            Assert.AreEqual(resp, fromCache);
+            Assert.AreEqual(resp, fromCache.HttpResponse);
             // check
-            Assert.AreEqual(resp2, fromCache2);
+            Assert.AreEqual(resp2, fromCache2.HttpResponse);
         }
 
            [TestMethod]
@@ -76,13 +99,14 @@ namespace Marvin.HttpCache.Tests
             var store = new ImmutableInMemoryCacheStore();
 
             var resp = new HttpResponseMessage();
-          
-            await store.SetAsync("key", resp);
+            var cacheKey = new CacheKey("key", null);
+
+            await store.SetAsync(cacheKey, new CacheEntry(resp));
 
             var fromCache = await store.GetAsync("key2");
 
             // check
-            Assert.AreEqual(default(HttpResponseMessage), fromCache);
+            Assert.AreEqual(default(CacheEntry), fromCache);
          
 
         }
@@ -91,11 +115,11 @@ namespace Marvin.HttpCache.Tests
         public async Task GetNonExistingFromEmpty()
         {
             var store = new ImmutableInMemoryCacheStore();
-                    
-            var fromCache = await store.GetAsync("key");
+            var cacheKey = new CacheKey("key", null);
+            var fromCache = await store.GetAsync(cacheKey);
 
             // check
-            Assert.AreEqual(default(HttpResponseMessage), fromCache);
+            Assert.AreEqual(default(CacheEntry), fromCache);
         }
 
 
@@ -105,15 +129,15 @@ namespace Marvin.HttpCache.Tests
             var store = new ImmutableInMemoryCacheStore();
 
             var resp = new HttpResponseMessage();
-
-            await store.SetAsync("key", resp);
+            var cacheKey = new CacheKey("key", null);
+            await store.SetAsync(cacheKey, new CacheEntry(resp));
 
             await store.ClearAsync();
 
-            var fromCache = await store.GetAsync("key");
+            var fromCache = await store.GetAsync(cacheKey);
 
             // check
-            Assert.AreEqual(default(HttpResponseMessage), fromCache);
+            Assert.AreEqual(default(CacheEntry), fromCache);
         }
 
     }

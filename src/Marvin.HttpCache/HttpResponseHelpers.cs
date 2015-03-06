@@ -23,7 +23,14 @@ namespace Marvin.HttpCache
 
         internal static bool CanBeCached(HttpResponseMessage serverResponse)
         {
+            
             if (!(_httpStatusCodesThatAllowCaching.Contains(serverResponse.StatusCode)))
+            {
+                return false;
+            }
+
+            // vary by header * => not cachable
+            if (serverResponse.Headers.Vary.Contains("*"))
             {
                 return false;
             }
