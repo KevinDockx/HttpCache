@@ -7,6 +7,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Marvin.HttpCache", "Marvin.
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Marvin.HttpCache.Tests", "Marvin.HttpCache.Tests\Marvin.HttpCache.Tests.csproj", "{895A42D5-4E91-4FC4-8F88-4BE2737D8ED2}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Marvin.HttpCache.XUnit.Tests", "Marvin.HttpCache.XUnit.Tests\Marvin.HttpCache.XUnit.Tests.csproj", "{A5678069-F9D9-4939-95F9-0AEF02D8E63F}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -33,6 +35,14 @@ Global
 		{895A42D5-4E91-4FC4-8F88-4BE2737D8ED2}.Release|Any CPU.Build.0 = Release|Any CPU
 		{895A42D5-4E91-4FC4-8F88-4BE2737D8ED2}.Release|ARM.ActiveCfg = Release|Any CPU
 		{895A42D5-4E91-4FC4-8F88-4BE2737D8ED2}.Release|x86.ActiveCfg = Release|Any CPU
+		{A5678069-F9D9-4939-95F9-0AEF02D8E63F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A5678069-F9D9-4939-95F9-0AEF02D8E63F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A5678069-F9D9-4939-95F9-0AEF02D8E63F}.Debug|ARM.ActiveCfg = Debug|Any CPU
+		{A5678069-F9D9-4939-95F9-0AEF02D8E63F}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{A5678069-F9D9-4939-95F9-0AEF02D8E63F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A5678069-F9D9-4939-95F9-0AEF02D8E63F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A5678069-F9D9-4939-95F9-0AEF02D8E63F}.Release|ARM.ActiveCfg = Release|Any CPU
+		{A5678069-F9D9-4939-95F9-0AEF02D8E63F}.Release|x86.ActiveCfg = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
